@@ -10,6 +10,7 @@ from google.genai import types
 
 from agents.explainer_agent import explainer_agent
 from tools.file_writer import save_markdown_file
+from tools.validation import validate_required_sections
 
 load_dotenv()
 
@@ -61,6 +62,13 @@ async def main() -> None:
     topic = input("Topic: ")
     reponse = await run_explainer(topic)
     print(reponse)
+
+    validation = validate_required_sections(reponse)
+    if not validation["valid"]:
+        print("Sections manquantes :")
+        for section in validation["missing_sections"]:
+            print(f"- {section}")
+
     print(save_markdown_file("output/study_guide.md", reponse))
 
 
