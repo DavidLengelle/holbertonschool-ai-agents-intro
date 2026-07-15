@@ -8,3 +8,6 @@ __pycache__/
 
 # Secrets
 .env
+
+# Sortie du test de l'outil, pas versionnée
+output/test_study_guide.md

@@ -28,6 +28,7 @@ Rules:
 - Key Concepts: 3 to 5 bullet points.
 - Example: one short code block.
 - Do not add any other section, introduction, or conclusion.
+- Write all content in French, but keep the four headings exactly in English.
 """
 
 explainer_agent = Agent(

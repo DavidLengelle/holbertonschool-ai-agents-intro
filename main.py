@@ -9,6 +9,7 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
 from agents.explainer_agent import explainer_agent
+from tools.file_writer import save_markdown_file
 
 load_dotenv()
 
@@ -58,7 +59,9 @@ async def run_explainer(topic: str) -> str:
 
 async def main() -> None:
     topic = input("Topic: ")
-    print(await run_explainer(topic))
+    reponse = await run_explainer(topic)
+    print(reponse)
+    print(save_markdown_file("output/study_guide.md", reponse))
 
 
 if __name__ == "__main__":
