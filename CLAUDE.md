@@ -9,7 +9,9 @@
 ## 2. Stack
 
 - Python (venv `.venv/`), Google ADK 2.4.0, LiteLLM 1.92.0, python-dotenv.
-- Modèle **Qwen3 8B en local via Ollama**, sous WSL/Ubuntu, API sur `http://localhost:11434`.
+- Modèle **Qwen2.5 3B en local via Ollama**, sous WSL/Ubuntu, API sur `http://localhost:11434`.
+  100 % CPU, pas de GPU. Modèle non raisonneur, choisi pour ça : voir la règle sur les
+  modèles de raisonnement en section 5.
 - `python` n'existe pas dans le shell : utiliser `.venv/bin/python`, ou activer le venv avec
   `source .venv/bin/activate`.
 - Config lue depuis `.env` (`OLLAMA_API_BASE`, `MODEL_NAME`) via `load_dotenv()`.
@@ -27,6 +29,11 @@
 - Les 8 titres de sections de la fiche sont en **anglais** et au caractère près :
   `Topic`, `Simple Explanation`, `Key Concepts`, `Example`, `Practice Exercise`,
   `Common Mistakes`, `Review Comments`, `Final Summary`.
+- Répartition des 8 sections entre les 3 agents, aucun autre agent n'est prévu :
+  l'explainer produit les 4 premières, le practice designer `Practice Exercise`,
+  le reviewer les 3 dernières (`Common Mistakes`, `Review Comments`,
+  `Final Summary`). Le reviewer les porte parce qu'il est le seul à voir la fiche
+  entière. L'ordre du fichier final vient de l'ordre de concaténation, pas d'un tri.
 - `validate_required_sections` est **strict** : il exige la ligne exacte `## Titre` en niveau 2.
   C'est aux agents de s'aligner sur le validateur, **jamais l'inverse**.
 - Un agent = une responsabilité. Un agent ne refait pas le travail d'un autre.
@@ -55,10 +62,14 @@ inchangées : shebang `#!/usr/bin/env python3` et docstrings en anglais.
 ### Agents (`agents/<role>_agent.py`)
 
 - Docstring de module sur plusieurs lignes : `"""Agent N : <nom>.`, ligne vide, puis `Rôle : ...`.
+- Chaque fichier d'agent appelle `load_dotenv()` avant son `os.getenv("MODEL_NAME")` :
+  le module doit lire le `.env` seul, sans dépendre de l'ordre des imports de `main.py`.
 - Le modèle est instancié dans chaque fichier d'agent, toujours ainsi :
 
 ```python
-MODEL_NAME = os.getenv("MODEL_NAME", "ollama_chat/qwen3:8b")
+load_dotenv()
+
+MODEL_NAME = os.getenv("MODEL_NAME", "ollama_chat/qwen2.5:3b")
 
 explainer_agent = Agent(
     name="explainer_agent",
@@ -69,7 +80,20 @@ explainer_agent = Agent(
 ```
 
 - Le préfixe `ollama_chat/` est obligatoire ; `ollama/` provoque des boucles d'appels d'outils.
+- Le modèle a deux noms : `MODEL_NAME` (vu par LiteLLM, avec le préfixe) et le tag Ollama
+  (sans le préfixe). Ne jamais coder un tag en dur dans un message : une commande
+  `ollama pull` doit passer par `ollama_tag(MODEL_NAME)`, sinon elle affiche
+  `ollama pull ollama_chat/qwen2.5:3b`, qui échoue.
 - Prompt dans une constante majuscule `<ROLE>_INSTRUCTION = """..."""`, **rédigée en anglais**.
+- **Pas de modèle de raisonnement, pas de `/no_think`.** Le projet a tourné sous Qwen3,
+  qui réfléchit avant de répondre : sur « compte de 1 à 20 », Qwen3 4B a généré 1213
+  tokens en 3 min 20 contre 127 en 14,7 s pour Qwen2.5 3B, soit ~20x plus de tokens
+  que ce qu'il sortait, payés puis jetés par `strip_thinking`. `/no_think` ne marche
+  pas : le modèle le lit comme du texte et réfléchit deux fois plus. Ne pas le remettre.
+- `strip_thinking` reste en place : il ne coûte rien et protège d'un retour à un
+  modèle qui émettrait des blocs `<think>`.
+- Le support des `tools` n'est pas un critère de choix du modèle : aucun agent n'appelle
+  d'outil, `main.py` invoque les outils en Python après coup.
 - `description=` en français, une phrase.
 - Le contenu produit est en **français**, mais les titres `##` restent **exactement en anglais**.
 - Le prompt interdit explicitement toute section, introduction ou conclusion en plus.
@@ -87,10 +111,14 @@ explainer_agent = Agent(
 
 ## 6. État d'avancement
 
-- Tasks 0 à 5 terminées et commitées : structure, config du modèle local, explainer agent,
-  `save_markdown_file`, `validate_required_sections`, practice designer agent
-  (`agents/practice_designer_agent.py`, plus `run_practice_designer` et son appel dans
-  `main.py` : sortie collée à la suite de l'explainer avant validation et écriture).
-- `agents/reviewer_agent.py` existe mais est vide.
-- `run_explainer` et `run_practice_designer` sont identiques à l'agent et au message près :
-  à fondre en une seule fonction quand un troisième agent arrivera.
+- Tasks 0 à 9 terminées : les 3 agents, les 2 outils, le workflow séquentiel, la gestion
+  d'erreurs et le README.
+- Structure de `main.py` : `run_agent(agent, entree)` fait tourner n'importe quel agent
+  (session, runner, extraction de la réponse, `strip_thinking`) ; les trois `run_<role>`
+  ne sont que des appels courts par-dessus. `assemble_draft` et `assemble_final` ne font
+  que du texte, `build_study_guide` enchaîne les agents, `main` vérifie puis enregistre.
+- Gestion d'erreurs : Ollama injoignable **et** modèle absent remontent tous les deux
+  `litellm.exceptions.APIConnectionError` (vérifié) ; seul le texte les distingue.
+  `NotFoundError` n'est jamais levée ici, ne pas l'attraper.
+- LiteLLM imprime plusieurs tracebacks bruts sur stderr avant que l'exception soit
+  attrapée : c'est son logging interne de retry, le message lisible s'affiche après.

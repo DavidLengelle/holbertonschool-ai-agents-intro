@@ -6,10 +6,13 @@ pratique court destiné à un débutant.
 
 import os
 
+from dotenv import load_dotenv
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 
-MODEL_NAME = os.getenv("MODEL_NAME", "ollama_chat/qwen3:8b")
+load_dotenv()
+
+MODEL_NAME = os.getenv("MODEL_NAME", "ollama_chat/qwen2.5:3b")
 
 PRACTICE_DESIGNER_INSTRUCTION = """You are a practice designer agent for beginner programming students.
 

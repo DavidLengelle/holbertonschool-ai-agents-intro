@@ -6,10 +6,13 @@ structurée en Markdown.
 
 import os
 
+from dotenv import load_dotenv
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 
-MODEL_NAME = os.getenv("MODEL_NAME", "ollama_chat/qwen3:8b")
+load_dotenv()
+
+MODEL_NAME = os.getenv("MODEL_NAME", "ollama_chat/qwen2.5:3b")
 
 EXPLAINER_INSTRUCTION = """You are an explainer agent for beginner programming students.
 
