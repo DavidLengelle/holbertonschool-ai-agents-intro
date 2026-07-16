@@ -33,6 +33,7 @@
 - Ne jamais commiter le `.env` (déjà dans `.gitignore`).
 - Ne pas modifier de fichiers hors du périmètre de la task en cours sans demander d'abord.
 - Le versioning est géré à la main par David : pas de `git add` / `commit` / `push`.
+- Écrire le code complet et fonctionnel. Jamais de placeholders, de `___`, de TODO ni d'exercices à trous : David n'apprend pas ici, il code ici.
 
 ## 5. Conventions de code
 

@@ -9,6 +9,7 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
 from agents.explainer_agent import explainer_agent
+from agents.practice_designer_agent import practice_designer_agent
 from tools.file_writer import save_markdown_file
 from tools.validation import validate_required_sections
 
@@ -58,10 +59,49 @@ async def run_explainer(topic: str) -> str:
     return strip_thinking(response)
 
 
+async def run_practice_designer(topic: str, explanation: str) -> str:
+    """Fait tourner l'agent practice designer et renvoie sa réponse."""
+    session_service = InMemorySessionService()
+    runner = Runner(
+        agent=practice_designer_agent,
+        app_name=APP_NAME,
+        session_service=session_service,
+    )
+    session = await session_service.create_session(
+        app_name=APP_NAME,
+        user_id=USER_ID,
+    )
+
+    entree = f"Topic: {topic}\n\nExplanation:\n{explanation}"
+    message = types.Content(role="user", parts=[types.Part(text=entree)])
+
+    response = ""
+    async for event in runner.run_async(
+        user_id=USER_ID,
+        session_id=session.id,
+        new_message=message,
+    ):
+        if event.is_final_response() and event.content and event.content.parts:
+            texte = "".join(
+                part.text
+                for part in event.content.parts
+                if part.text and not getattr(part, "thought", False)
+            )
+            if texte:
+                response = texte
+
+    return strip_thinking(response)
+
+
 async def main() -> None:
     topic = input("Topic: ")
-    reponse = await run_explainer(topic)
-    print(reponse)
+    explication = await run_explainer(topic)
+    print(explication)
+
+    exercice = await run_practice_designer(topic, explication)
+    print(exercice)
+
+    reponse = f"{explication}\n\n{exercice}"
 
     validation = validate_required_sections(reponse)
     if not validation["valid"]:
