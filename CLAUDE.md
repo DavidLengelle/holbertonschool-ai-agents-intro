@@ -87,11 +87,10 @@ explainer_agent = Agent(
 
 ## 6. État d'avancement
 
-- Tasks 0 à 4 terminées et commitées : structure, config du modèle local, explainer agent,
-  `save_markdown_file`, `validate_required_sections`.
-- **Task 5 terminée (pas encore commitée) : Practice Designer Agent.**
-  `agents/practice_designer_agent.py` écrit, plus `run_practice_designer` et son appel
-  dans `main.py` (sortie collée à la suite de l'explainer avant validation et écriture).
+- Tasks 0 à 5 terminées et commitées : structure, config du modèle local, explainer agent,
+  `save_markdown_file`, `validate_required_sections`, practice designer agent
+  (`agents/practice_designer_agent.py`, plus `run_practice_designer` et son appel dans
+  `main.py` : sortie collée à la suite de l'explainer avant validation et écriture).
 - `agents/reviewer_agent.py` existe mais est vide.
 - `run_explainer` et `run_practice_designer` sont identiques à l'agent et au message près :
   à fondre en une seule fonction quand un troisième agent arrivera.
